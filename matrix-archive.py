@@ -58,6 +58,7 @@ from nio import (
 from functools import partial
 from typing import Union, TextIO
 from urllib.parse import urlparse
+from datetime import datetime
 import aiofiles
 import argparse
 import asyncio
@@ -66,7 +67,7 @@ import itertools
 import os
 import re
 import sys
-import yaml
+import csv
 
 
 DEVICE_NAME = "matrix-archive"
@@ -216,7 +217,7 @@ def choose_filename(filename):
 
 
 async def write_event(
-    client: AsyncClient, room: MatrixRoom, output_file: TextIO, event: RoomMessage
+    client: AsyncClient, room: MatrixRoom, output_file, event: RoomMessage
 ) -> None:
     if not ARGS.no_media:
         media_dir = mkdir(f"{OUTPUT_DIR}/{room.display_name}_{room.room_id}_media")
@@ -224,21 +225,12 @@ async def write_event(
     if event.sender in room.users:
         # If user is still present in room, include current nickname
         sender_name = f"{room.users[event.sender].display_name} {sender_name}"
-    serialize_event = lambda event_payload: yaml.dump(
-        [
-            {
-                **dict(
-                    sender_id=event.sender,
-                    sender_name=sender_name,
-                    timestamp=event.server_timestamp,
-                ),
-                **event_payload,
-            }
-        ]
-    )
 
     if isinstance(event, RoomMessageFormatted):
-        await output_file.write(serialize_event(dict(type="text", body=event.body,)))
+        #await output_file.write(serialize_event(dict(type="text", body=event.body,)))
+        output=[event.sender,sender_name,str(datetime.fromtimestamp(event.server_timestamp/1000)),event.body]
+        output_file.writerow(output)
+
     elif isinstance(event, (RoomMessageMedia, RoomEncryptedMedia)):
         media_data = await download_mxc(client, event.url)
         filename = choose_filename(f"{media_dir}/{event.body}")
@@ -256,9 +248,13 @@ async def write_event(
                 await f.write(media_data)
             # Set atime and mtime of file to event timestamp
             os.utime(filename, ns=((event.server_timestamp * 1000000,) * 2))
-        await output_file.write(serialize_event(dict(type="media", src="." + filename[len(OUTPUT_DIR):],)))
+        #await output_file.write(serialize_event(dict(type="media", src="." + filename[len(OUTPUT_DIR):],)))
+        output=[event.sender,sender_name,str(datetime.fromtimestamp(event.server_timestamp/1000)),"."+filename[len(OUTPUT_DIR):]]
+        output_file.writerow(output)
     elif isinstance(event, RedactedEvent):
-        await output_file.write(serialize_event(dict(type="redacted",)))
+    #    await output_file.write(serialize_event(dict(type="redacted",)))
+        output=[event.sender,sender_name,str(datetime.fromtimestamp(event.server_timestamp/1000)),"Redacted message"]
+        output_file.writerow(output)
 
 
 async def save_avatars(client: AsyncClient, room: MatrixRoom) -> None:
@@ -310,20 +306,22 @@ async def write_room_events(client, room):
     # sometimes depending on the sync, front events need to be fetched
     # as well.
     fetch_room_events_ = partial(fetch_room_events, client, start_token, room)
-    async with aiofiles.open(
-        f"{OUTPUT_DIR}/{room.display_name}_{room.room_id}.yaml", "w"
+    with open(
+        f"{OUTPUT_DIR}/{room.display_name}_{room.room_id}.csv", "w"
     ) as f:
+        csv_file=csv.writer(f)
+        header=['User ID', 'Pretty Name', 'Date', 'Message']
+        csv_file.writerow(header)
+
         for events in [
             reversed(await fetch_room_events_(MessageDirection.back)),
             await fetch_room_events_(MessageDirection.front),
         ]:
             for event in events:
                 try:
-                    await write_event(client, room, f, event)
+                    await write_event(client, room, csv_file, event)
                 except exceptions.EncryptionError as e:
                     print(e, file=sys.stderr)
-    await save_avatars(client, room)
-    print("Successfully wrote all room events to disk.")
 
 
 async def main() -> None:
