@@ -35,6 +35,6 @@ Note that at least Python 3.8+ is required.
 
 2. Run export.sh with the following parameters:
 	```
-      export --user=USERID --password=USERPASS --keys=KEYFILES --keyspass=KEYSPASS --server=SERVER URL [--media | --no-media ]
+      export.sh --user=USERID --password=USERPASS --keys=KEYFILES --keyspass=KEYSPASS --server=SERVER URL [--media | --no-media ]
 	```
 3. You will get your archive in a tgz format

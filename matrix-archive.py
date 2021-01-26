@@ -97,6 +97,12 @@ def parse_args():
              """,
     )
     parser.add_argument(
+        "--listrooms",
+        action="store_true",
+        help="""Use unattended batch mode to fetch list
+             """,
+    )
+    parser.add_argument(
         "--batch",
         action="store_true",
         help="""Use unattended batch mode
@@ -178,7 +184,7 @@ async def create_client() -> AsyncClient:
     homeserver = ARGS.server
     user_id = ARGS.user
     password = ARGS.userpass
-    if not ARGS.batch:
+    if not ARGS.batch and not ARGS.listrooms:
         homeserver = input(f"Enter URL of your homeserver: [{homeserver}] ") or homeserver
         user_id = input(f"Enter your full user ID: [{user_id}] ") or user_id
         password = getpass.getpass()
@@ -191,7 +197,7 @@ async def create_client() -> AsyncClient:
     client.load_store()
     room_keys_path = ARGS.keys
     room_keys_password = ARGS.keyspass
-    if not ARGS.batch:
+    if not ARGS.batch and not ARGS.listrooms:
         room_keys_path = input(f"Enter full path to room E2E keys: [{room_keys_path}] ") or room_keys_path
         room_keys_password = getpass.getpass("Room keys password: ")
     print("Importing keys. This may take a while...")
@@ -199,13 +205,26 @@ async def create_client() -> AsyncClient:
     return client
 
 
+def list_room(client: AsyncClient):
+    with open(
+            f"{OUTPUT_DIR}/rooms_list.txt","w"
+            ) as rlist:
+        for room_id, room in client.rooms.items():
+            rlist.write(f"{room_id}, {room.display_name}\n")
+    return client
+
+
 async def select_room(client: AsyncClient) -> MatrixRoom:
     print("\nList of joined rooms (room id, display name):")
-    for room_id, room in client.rooms.items():
-        print(f"{room_id}, {room.display_name}")
-    room_id = input(f"Enter room id: ")
-    return client.rooms[room_id]
+    with open(
+            f"{OUTPUT_DIR}/rooms_list.txt","w"
+            ) as rlist:
+        for room_id, room in client.rooms.items():
+            print(f"{room_id}, {room.display_name}")
+            rlist.write(f"{room_id}, {room.display_name}\n")
+        room_id = input(f"Enter room id: ")
 
+    return client.rooms[room_id]
 
 def choose_filename(filename):
     start, ext = os.path.splitext(filename)
@@ -341,6 +360,9 @@ async def main() -> None:
             # If the program is running in unattended batch mode,
             # then we can quit at this point
             raise SystemExit
+        if ARGS.listrooms:
+            print ("listing")
+            list_room(client)
         else:
             while True:
                 room = await select_room(client)
