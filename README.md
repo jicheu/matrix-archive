@@ -35,6 +35,13 @@ Note that at least Python 3.8+ is required.
 
 2. Run export.sh with the following parameters:
 	```
-      export.sh --user=USERID --password=USERPASS --keys=KEYFILES --keyspass=KEYSPASS --server=SERVER URL [--media | --no-media ]
+      export.sh --user=USERID --password=USERPASS --keys=KEYFILES --keyspass=KEYSPASS --server=SERVER URL [--media | --no-media ] --all-rooms
 	```
 3. You will get your archive in a tgz format
+
+# Advanced usage
+
+Add `--list-rooms` instead of `--all-rooms` will generate a list of room id
+You can then replace all rooms option by a series of `--room=` followed by the room id without the initial ! such as in:
+
+```/export.sh --user=my user --password=mypassword --keys=keyfile --keyspass=keypass --server=serverurl --room="NStMnAUWAIfVdYHsAm" --room="btYyveaTqxTRUbFSAj" ```
