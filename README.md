@@ -2,7 +2,7 @@
 
 Archive Matrix room messages.
 
-Creates a YAML log of all room messages, including media.
+Creates a CSV log of all room messages, including media.
 
 # Installation
 
