@@ -4,7 +4,6 @@
 [ ! -d ".target" ] && mkdir .target
 
 ROOMLIST=""
-EXTRA=""
 KEYS=""
 COMMANDE="$0 $@"
 RESTART=0
@@ -17,6 +16,8 @@ create_room_list() {
 		  ROOMLIST="$ROOMLIST --room=!$i:smart4.io"
       	done 
 }
+
+EXTRA=""
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -50,6 +51,7 @@ while [ $# -gt 0 ]; do
       ;;
     --list-rooms)
       ROOMLIST="--listrooms"
+      EXTRA=""
       ;;
     --room=*)
       EXTRA="--batch"
@@ -92,16 +94,20 @@ else
 fi 
 
 KEYS=".env/$USER_ID.keys"
-[ -z "$ROOMLIST" ] && ROOMLIST="--all-rooms";EXTRA="--batch"
+
+if [ -z "$ROOMLIST" ]; then
+	ROOMLIST="--all-rooms"
+	EXTRA="--batch"
+fi
 
 USER=${USER_ID%:*}
 
 TARGET=""
 [ "$ROOMLIST" != "--listrooms" ] && TARGET=".env/$USER.${USER_ID#*:}.backup"
 
-echo "Starting export, this may take a while"
 
 #python3 -m venv venv && source venv/bin/activate && pip3 install -r requirements.txt && python3 -u matrix-archive.py --server $SERVERURL --user @$USER_ID --userpass $USERPASS --keyspass $KEYSPASS $ROOMLIST $EXTRA $ALLROOMS --keys $KEYS $TARGET 2>&1
+printf "python3 -m venv venv && source venv/bin/activate && python3 -u matrix-archive.py --server $SERVERURL --user @$USER_ID --userpass $USERPASS --keyspass $KEYSPASS $ROOMLIST $EXTRA $MEDIA $ALLROOMS --keys $KEYS $TARGET 2>&1"
 python3 -m venv venv && source venv/bin/activate && python3 -u matrix-archive.py --server $SERVERURL --user @$USER_ID --userpass $USERPASS --keyspass $KEYSPASS $ROOMLIST $EXTRA $MEDIA $ALLROOMS --keys $KEYS $TARGET 2>&1
 [ "$ROOMLIST" != "--listrooms" ] && tar czf .target/$USER_ID.tgz $TARGET
 

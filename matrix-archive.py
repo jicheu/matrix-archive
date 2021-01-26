@@ -373,7 +373,7 @@ async def main() -> None:
             # then we can quit at this point
             raise SystemExit
         if ARGS.listrooms:
-            print ("listing")
+            print ("Listing rooms...\n")
             list_room(client)
         else:
             while True:
