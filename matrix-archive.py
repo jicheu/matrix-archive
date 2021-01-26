@@ -55,6 +55,7 @@ from nio import (
     store,
     exceptions
 )
+from bullet import Check
 from functools import partial
 from typing import Union, TextIO
 from urllib.parse import urlparse
@@ -68,7 +69,6 @@ import os
 import re
 import sys
 import csv
-
 
 DEVICE_NAME = "matrix-archive"
 
@@ -206,18 +206,30 @@ async def create_client() -> AsyncClient:
 
 
 def list_room(client: AsyncClient):
+    selection=[]
+    user_id=ARGS.user
     with open(
-            f"{OUTPUT_DIR}/rooms_list.txt","w"
+            f"{OUTPUT_DIR}/.env/rooms_list.{user_id}.txt","w"
             ) as rlist:
         for room_id, room in client.rooms.items():
-            rlist.write(f"{room_id}, {room.display_name}\n")
+            selection.append( f"{room_id} -> {room.display_name}")
+         #   print(selection)
+
+        cli = Check(choices=selection)
+        result=cli.launch()
+        #rlist.write(f"{room_id}, {room.display_name}\n")
+        final=""
+        for val in result:
+            val=re.sub(":smart4.*","",re.sub("!","",val))
+            final=final + val+"\n"
+        rlist.write(final)
     return client
 
 
 async def select_room(client: AsyncClient) -> MatrixRoom:
     print("\nList of joined rooms (room id, display name):")
     with open(
-            f"{OUTPUT_DIR}/rooms_list.txt","w"
+            f"{OUTPUT_DIR}/.env/rooms_list.{user_id}.txt","w"
             ) as rlist:
         for room_id, room in client.rooms.items():
             print(f"{room_id}, {room.display_name}")
