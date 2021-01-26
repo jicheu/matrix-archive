@@ -92,7 +92,7 @@ else
 fi 
 
 KEYS=".env/$USER_ID.keys"
-[ -z "$ROOMLIST" ] && ROOMLIST="--all-rooms"
+[ -z "$ROOMLIST" ] && ROOMLIST="--all-rooms";EXTRA="--batch"
 
 USER=${USER_ID%:*}
 
